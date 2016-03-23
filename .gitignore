@@ -35,3 +35,6 @@ jspm_packages
 
 # VS Code Project tasks
 .vscode
+
+# Typescript Definition Files
+typings
