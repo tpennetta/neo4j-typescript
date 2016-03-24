@@ -9,7 +9,7 @@
   "main": "build/index.js",
   "scripts": {
     "build": "tsc -p .",
-    "test": "tsc -p . && ./node_modules/.bin/mocha ./build/index.spec.js"
+    "test": "tsc -p . && ./node_modules/.bin/istanbul cover -x \"**.spec.**\" ./node_modules/.bin/_mocha -- build/index.spec.js"
   },
   "keywords": [
     "typescript",
@@ -25,6 +25,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "form-data": "^1.0.0-rc4",
+    "istanbul": "^0.4.2",
     "mocha": "^2.4.5",
     "tslint": "^3.6.0",
     "typescript": "^1.8.9"
