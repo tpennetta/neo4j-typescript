@@ -10,3 +10,5 @@ install:
   - npm install -g typings
   - typings install
   - npm install
+services:
+  - neo4j
