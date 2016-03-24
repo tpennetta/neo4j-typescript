@@ -1,6 +1,6 @@
 {
   "name": "neo4j-typescript",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Typescript Library for Communicating with Neo4j over REST using Request",
   "engines": {
     "node": ">=4.0.0"
