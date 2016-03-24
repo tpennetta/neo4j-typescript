@@ -68,6 +68,33 @@ export interface INeo4jAuthConfig {
   password: string;
 }
 
+export interface INeo4jCypherRequest {
+  statements: [{
+    statement: string,
+    parameters?: {
+      props: any
+    }
+  }]
+}
+
+export interface INeo4jCypherResponse {
+  results: [{
+    columns: string[],
+    data: [{
+      row: any[]
+    }]
+  }]
+  errors: [{
+    code?: string,
+    message?: string
+  }]
+}
+
+export interface INeo4jIndexResponse {
+  property_keys: string[],
+  label: string
+}
+
 export interface INeo4jEntity {
   extensions?: any;
   data?: any;
@@ -208,6 +235,101 @@ export function getAllPropertyKeys(): Promise<string[]> {
 }
 
 //==============================================================================
+// Index Schema functions
+//==============================================================================
+
+export function createIndex(label: string, propertyNames: string | string[]): Promise<INeo4jIndexResponse> {
+  let promise: Promise<INeo4jIndexResponse> = new Promise((resolve, reject) => {
+    let normalizedPropertyNamesArray: string[] = [];
+    if (typeof propertyNames === "string") {
+      normalizedPropertyNamesArray.push(propertyNames);
+    } else {
+      normalizedPropertyNamesArray = propertyNames;
+    }
+
+    let indexEndpointString: string = `${graphPaths.indexes}/${label}`;
+    try {
+      requestOptions.body = JSON.stringify({ "property_keys": normalizedPropertyNamesArray });
+    } catch (ex) {
+      reject(ex);
+    }
+    request.post(indexEndpointString, requestOptions, (err, response, body) => {
+      if (err) {
+        reject(err);
+      }
+      if (response.statusCode !== 200) {
+        reject(`Error creating index on label ${label}. HTTP Status Code: ${response.statusCode}. HTTP Body: ${body}`);
+      }
+      body = typeof body === "string" ? JSON.parse(body) : body;
+      resolve(body);
+    });
+  });
+  return promise;
+}
+
+export function listIndexesForLabel(label: string): Promise<INeo4jIndexResponse> {
+  let promise: Promise<INeo4jIndexResponse> = new Promise((resolve, reject) => {
+    let indexEndpointString: string = `${graphPaths.indexes}/${label}`;
+    request.get(indexEndpointString, requestOptions, (err, response, body) => {
+      if (err) {
+        reject(err);
+      }
+      if (response.statusCode !== 200) {
+        reject(`Error creating index on label ${label}. HTTP Status Code: ${response.statusCode}. HTTP Body: ${body}`);
+      }
+      body = typeof body === "string" ? JSON.parse(body) : body;
+      resolve(body);
+    });
+  });
+  return promise;
+}
+
+export function dropIndex(label: string, propertyName: string): Promise<boolean> {
+  let promise: Promise<boolean> = new Promise((resolve, reject) => {
+    let indexEndpointString: string = `${graphPaths.indexes}/${label}/${propertyName}`;
+    request.del(indexEndpointString, requestOptions, (err, response, body) => {
+      if (err) {
+        reject(err);
+      }
+      if (response.statusCode !== 204) {
+        reject(`Error creating index on label ${label}. HTTP Status Code: ${response.statusCode}. HTTP Body: ${body}`);
+      }
+      resolve(true);
+    });
+  });
+  return promise;
+}
+
+//==============================================================================
+// CYPHER FTW!!!
+//==============================================================================
+
+export function cypher(cypherStatements: INeo4jCypherRequest): Promise<INeo4jCypherResponse> {
+  let promise = new Promise((resolve, reject) => {
+    let cypherEndpointString: string = `${graphPaths.transaction}/commit`;
+    try {
+      requestOptions.body = JSON.stringify(cypherStatements);
+    } catch (ex) {
+      reject(ex);
+    }
+    request.post(cypherEndpointString, requestOptions, (err, response, body) => {
+      if (err) {
+        reject(err);
+      }
+      if (response.statusCode !== 200 && response.statusCode !== 201) {
+        reject();
+      }
+      body = typeof body === "string" ? JSON.parse(body) : body;
+      if (body.errors.length > 0) {
+        reject(body.errors);
+      }
+      resolve(body);
+    });
+  });
+  return promise;
+}
+
+//==============================================================================
 // Node/Vertex functions
 //==============================================================================
 
@@ -274,6 +396,32 @@ export function deleteNode(id: number): Promise<boolean> {
         reject(`Error deleting Node. HTTP Status code returned: ${response.statusCode}`);
       }
       resolve(true);
+    });
+  });
+  return promise;
+}
+
+export function getNodeDegree(nodeOrNodeId: INode | number, direction?: string, type?: string): Promise<number> {
+  let promise = new Promise((resolve, reject) => {
+    let degreeEndpointString = `${_getNeo4jEntityUrl(nodeOrNodeId, "node")}/degree`;
+    direction = direction || "all";
+    if (direction && NEO4J_RELATIONSHIP_DIRECTION.indexOf(direction) !== -1) {
+      degreeEndpointString = url.resolve(`${degreeEndpointString}/`, direction);
+    } else {
+      reject(`'direction' must be of value: ${NEO4J_RELATIONSHIP_DIRECTION}`);
+    }
+    if (type && typeof type === "string") {
+      degreeEndpointString = url.resolve(`${degreeEndpointString}/`, type)
+    }
+    request.get(degreeEndpointString, requestOptions, (err, response, body) => {
+      if (err) {
+        reject(err);
+      }
+      if (response.statusCode !== 200) {
+        reject(`Error retrieving node degree. HTTP Status code returned: ${response.statusCode}. HTTP body: ${body}`);
+      }
+      body = typeof body === "string" && body.length > 0 ? JSON.parse(body) : body;
+      resolve(body);
     });
   });
   return promise;

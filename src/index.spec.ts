@@ -108,6 +108,82 @@ describe("Neo4j Typescript REST", function() {
           done(reason);
         });
     });
+    it("should create a new index on label", function(done) {
+      neo4j.createIndex("test", "testProperty")
+        .then((response) => {
+          done();
+        })
+        .catch((reason) => {
+          done(reason);
+        });
+    });
+    it("should list index just created by label", function(done) {
+      neo4j.listIndexesForLabel("test")
+        .then((response) => {
+          response[0].property_keys.should.contain("testProperty");
+          done();
+        })
+        .catch((reason) => {
+          done(reason);
+        });
+    });
+    it("should drop index just created on label", function(done) {
+      neo4j.dropIndex("test", "testProperty")
+        .then((response) => {
+          done();
+        })
+        .catch((reason) => {
+          done(reason);
+        });
+    });
+  });
+  describe("#Cypher query function", function() {
+    it("should execute a valid cypher statement", function(done) {
+      let validCypher: neo4j.INeo4jCypherRequest = {
+        statements: [{
+          statement: "MATCH (n) RETURN n"
+        }]
+      };
+      neo4j.cypher(validCypher)
+        .then((response) => {
+          done();
+        })
+        .catch((reason) => {
+          done(reason);
+        });
+    });
+    it("should execute several valid cypher statements", function(done) {
+      let validCypher: neo4j.INeo4jCypherRequest = {
+        statements: [
+          {
+            statement: "MATCH (n) RETURN count(n)"
+          },
+          {
+            statement: "MATCH (x) RETURN x"
+          }
+        ]
+      };
+      neo4j.cypher(validCypher)
+        .then((response) => {
+          done();
+        })
+        .catch((reason) => {
+          done(reason);
+        });
+    });
+    it("should fail to execute an invalid cypher statement", function(done) {
+      let invalidCypher: neo4j.INeo4jCypherRequest = {
+        statements: [{
+          statement: "This is not valid"
+        }]
+      };
+      neo4j.cypher(invalidCypher)
+        .then((response) => {
+          done(response);
+        }).catch((reason) => {
+          done();
+        });
+    });
   });
   describe("#Node level functions", function() {
     let id: number = null;
@@ -164,6 +240,22 @@ describe("Neo4j Typescript REST", function() {
         .catch((reason) => {
           done(reason);
         });
+    });
+    it("should get the degree of the newly created node(0)", function(done) {
+      neo4j.getNodeDegree(id)
+        .then((response) => {
+          response.should.equal(0);
+          return neo4j.getNodeDegree(id, "all");
+        })
+        .then((response) => {
+          response.should.equal(0);
+          return neo4j.getNodeDegree(id, "all", "testing");
+        })
+        .then((response) => {
+          response.should.equal(0);
+          done();
+        })
+        .catch((reason) => { done(reason); });
     });
     it(`should delete newly created node`, function(done) {
       neo4j.deleteNode(id)
