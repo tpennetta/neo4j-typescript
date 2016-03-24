@@ -38,6 +38,3 @@ jspm_packages
 
 # Typescript Definition Files
 typings
-
-# Build directory
-build
