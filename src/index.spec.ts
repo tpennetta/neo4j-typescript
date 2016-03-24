@@ -3,23 +3,37 @@ import * as chai from  "chai";
 import * as util from "util";
 
 import * as neo4j from "./index";
+import * as request from "request";
 
 let should = chai.should();
 
 describe("Neo4j Typescript REST", function() {
+  let neo4jConfig: neo4j.INeo4jConfig = {
+    protocol: neo4j.NEO4J_PROTOCOL.http,
+    host: "localhost",
+    port: 7474,
+    authentication: {
+      username: "neo4j",
+      password: "neo4j"
+    },
+    streaming: true
+  };
+  let badNeo4jConfig: neo4j.INeo4jConfig = JSON.parse(JSON.stringify(neo4jConfig));
+  let requestOptions: request.CoreOptions = neo4j.getRequestOptions();
+
   describe("#connect", function() {
-    let neo4jConfig: neo4j.INeo4jConfig = {
-      protocol: neo4j.NEO4J_PROTOCOL.http,
-      host: "localhost",
-      port: 7474,
-      authentication: {
-        username: "neo4j",
-        password: "neo4j"
-      }
-    };
-
     let connection = null;
+    it("should fail to parse url endpoint", function(done) {
 
+      badNeo4jConfig.host = null;
+      neo4j.connect(badNeo4jConfig)
+        .then((response) => {
+          done(response);
+        })
+        .catch((reason) => {
+          done()
+        });
+    });
     it("should establish a new connection", function(done) {
       neo4j.connect(neo4jConfig).
         then((response) => {
@@ -44,8 +58,24 @@ describe("Neo4j Typescript REST", function() {
       neo4j.isConnected().should.equal(true);
       done();
     });
+    it("should unset the http request header to streaming", function() {
+      neo4j.setStreaming(false);
+      neo4j.isStreaming().should.equal(false);
+    });
   });
   describe("#global graph functions", function() {
+    it("should fail to return all graph relationship types due to request error.", function(done) {
+      let goodBaseUrl: string = requestOptions.baseUrl;
+      requestOptions.baseUrl = "WRONG";
+      neo4j.getRelationshipTypes()
+        .then((response) => {
+          done(response);
+        })
+        .catch((reason) => {
+          requestOptions.baseUrl = goodBaseUrl;
+          done();
+        });
+    });
     it("should return all graph relationship types", function(done) {
       neo4j.getRelationshipTypes()
         .then((relationshipTypes) => {
@@ -54,6 +84,18 @@ describe("Neo4j Typescript REST", function() {
         })
         .catch((reason) => {
           done(reason);
+        });
+    });
+    it("should fail to return all graph property keys due to request error.", function(done) {
+      let goodBaseUrl: string = requestOptions.baseUrl;
+      requestOptions.baseUrl = "WRONG";
+      neo4j.getAllPropertyKeys()
+        .then((response) => {
+          done(response);
+        })
+        .catch((reason) => {
+          requestOptions.baseUrl = goodBaseUrl;
+          done();
         });
     });
     it("should return all graph property keys", function(done) {
@@ -69,6 +111,27 @@ describe("Neo4j Typescript REST", function() {
   });
   describe("#Node level functions", function() {
     let id: number = null;
+    it("should fail to create a new Node due to request error", function(done) {
+      let goodBaseUrl: string = requestOptions.baseUrl;
+      requestOptions.baseUrl = "WRONG";
+      neo4j.createNode({ firstName: "Testing" })
+        .then((response) => {
+          done(response);
+        })
+        .catch((reason) => {
+          requestOptions.baseUrl = goodBaseUrl;
+          done();
+        });
+    });
+    it("should fail to create a new Node due to response error", function(done) {
+      neo4j.createNode({ nested: { foo: "bar" } })
+        .then((response) => {
+          done(response);
+        })
+        .catch((reason) => {
+          done();
+        });
+    });
     it("should create a new Node", function(done) {
       neo4j.createNode({ firstName: "Testing" })
         .then((response) => {
@@ -78,6 +141,18 @@ describe("Neo4j Typescript REST", function() {
         })
         .catch((reason) => {
           done(reason);
+        });
+    });
+    it("should fail to return newly created node due to request error", function(done) {
+      let goodBaseUrl: string = requestOptions.baseUrl;
+      requestOptions.baseUrl = "WRONG";
+      neo4j.getNode(id)
+        .then((response) => {
+          done(response);
+        })
+        .catch((reason) => {
+          requestOptions.baseUrl = goodBaseUrl;
+          done();
         });
     });
     it("should return newly created node", function(done) {
@@ -97,6 +172,27 @@ describe("Neo4j Typescript REST", function() {
         })
         .catch((reason) => {
           done(reason);
+        });
+    });
+    it(`should fail to delete node due to request error`, function(done) {
+      let goodBaseUrl: string = requestOptions.baseUrl;
+      requestOptions.baseUrl = "WRONG";
+      neo4j.deleteNode(id)
+        .then((response) => {
+          done(response);
+        })
+        .catch((reason) => {
+          requestOptions.baseUrl = goodBaseUrl;
+          done();
+        });
+    });
+    it(`should fail to delete non-existant node`, function(done) {
+      neo4j.deleteNode(id)
+        .then((response) => {
+          done(response);
+        })
+        .catch((reason) => {
+          done();
         });
     });
     it(`should not find deleted node`, function(done) {
@@ -132,6 +228,15 @@ describe("Neo4j Typescript REST", function() {
         });
     });
 
+    it("should fail to upsert a single node property", function(done) {
+      neo4j.setProperty(id, "WRONG", "lastName", "Pennetta")
+        .then((response) => {
+          done(response);
+        })
+        .catch((reason) => {
+          done();
+        });
+    });
     it("should upsert a single node property", function(done) {
       neo4j.setProperty(id, "node", "lastName", "Pennetta")
         .then((response) => {
@@ -143,7 +248,7 @@ describe("Neo4j Typescript REST", function() {
     });
     it("should upsert node properties", function(done) {
       let addedProperties = { newProperty: "My Property" };
-      neo4j.updateProperties(id, addedProperties)
+      neo4j.updateProperties(id, "node", addedProperties)
         .then((response) => {
           response.should.equal(true);
           done();
@@ -153,7 +258,7 @@ describe("Neo4j Typescript REST", function() {
         });
     });
     it("should get node properties", function(done) {
-      neo4j.getProperties(id)
+      neo4j.getProperties(id, "node")
         .then((response) => {
           response.should.include.keys("newProperty");
           done();
@@ -163,7 +268,7 @@ describe("Neo4j Typescript REST", function() {
         });
     });
     it("should get a single node property", function(done) {
-      neo4j.getProperty(id, "newProperty")
+      neo4j.getProperty(id, "newProperty", "node")
         .then((response) => {
           response.should.equal("My Property");
           done();
@@ -188,7 +293,7 @@ describe("Neo4j Typescript REST", function() {
           "bar": "baz"
         }
       };
-      neo4j.updateProperties(id, myTestNestedObject)
+      neo4j.updateProperties(id, "node", myTestNestedObject)
         .then((response) => {
           done(response);
         })
@@ -197,7 +302,7 @@ describe("Neo4j Typescript REST", function() {
         });
     });
     it("should delete all properties on a node", function(done) {
-      neo4j.deleteProperty(id, "newProperty")
+      neo4j.deleteProperty(id, "newProperty", "node")
         .then((response) => {
           done();
         })
@@ -206,7 +311,7 @@ describe("Neo4j Typescript REST", function() {
         });
     });
     it("should delete a single property on a node", function(done) {
-      neo4j.deleteAllProperties(id)
+      neo4j.deleteAllProperties(id, "node")
         .then((response) => {
           done();
         })
@@ -265,7 +370,15 @@ describe("Neo4j Typescript REST", function() {
     it("should set a single property on newly created relationship", function(done) { done(); });
     it("should get all properties on newly created relationship", function(done) { done(); });
     it("should get a single property on newly created relationship", function(done) { done(); });
-    it("should delete newly created relationship", function(done) { done(); });
+    it("should delete newly created relationship", function(done) {
+      neo4j.deleteRelationship(sampleNewRelationship)
+        .then((response) => {
+          done();;
+        })
+        .catch((reason) => {
+          done(reason);
+        });
+    });
     it("should get all relationships on node", function(done) { done(); });
     it("should get all incoming relationships on node", function(done) { done(); });
     it("should get all outgoing relationships on node", function(done) { done(); });

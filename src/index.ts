@@ -9,18 +9,20 @@ import * as request from "request";
 import * as util from "util";
 import * as http from "http";
 
-/*********************************
- * Global request module defaults.
- */
+//==============================================================================
+// Global request module defaults.
+//==============================================================================
+
 request.defaults({
   headers: {
     "Content-Type": "application/json"
   }
 });
 
-/*********************************
- * Global constants.
- */
+//==============================================================================
+// Global constants.
+//==============================================================================
+
 export enum NEO4J_PROTOCOL { http, https };
 
 // TODO: Change to enums
@@ -33,9 +35,10 @@ const NEO4J_STANDARD_PATHS: any = {
   propertyKeys: "/db/data/propertykeys"
 };
 
-/*********************************
- * Stricty enforced Interfaces
- */
+//==============================================================================
+// Stricty enforced Interfaces
+//==============================================================================
+
 export interface INeo4jInternalPaths {
   extensions: any;
   node: string;
@@ -102,9 +105,10 @@ interface IResponseObject {
   body: any;
 }
 
-/*********************************
- * Internal module variables. Connection state properties.
- */
+//==============================================================================
+// Internal module variables. Connection state properties.
+//==============================================================================
+
 let connected: boolean = false;
 let streaming: boolean = false;
 let graphPaths: INeo4jInternalPaths = null;
@@ -130,12 +134,7 @@ export function connect(options: INeo4jConfig): Promise<INeo4jInternalPaths | st
 
     let dbConfigEndpointString: string = `${NEO4J_PROTOCOL[options.protocol]}://${options.host}:${options.port}`;
     dbConfigEndpointString = url.resolve(dbConfigEndpointString, NEO4J_STANDARD_PATHS.config);
-
-    try {
-      dbConfigUrl = url.parse(dbConfigEndpointString);
-    } catch (ex) {
-      return reject(`Error parsing Neo4j connection endpoint: ${ex}`);
-    }
+    dbConfigUrl = url.parse(dbConfigEndpointString);
 
     requestOptions.method = "GET";
     requestOptions.port = options.port;
@@ -176,11 +175,7 @@ export function getRelationshipTypes(): Promise<string[]> {
         reject(`Invalid HTTP Response code returned: ${response.statusCode}`);
       }
       if (typeof body === "string") {
-        try {
-          body = JSON.parse(body);
-        } catch (ex) {
-          reject(`Invalid JSON string returned: ${ex.message}`);
-        }
+        body = JSON.parse(body);
       }
       relationshipTypes = body;
       resolve(relationshipTypes);
@@ -212,9 +207,9 @@ export function getAllPropertyKeys(): Promise<string[]> {
   return promise;
 }
 
-/*********************************
- * Node/Vertex functions
- */
+//==============================================================================
+// Node/Vertex functions
+//==============================================================================
 
 /**
  * @param  {number} id
@@ -284,9 +279,9 @@ export function deleteNode(id: number): Promise<boolean> {
   return promise;
 }
 
-/*********************************
- * Property functions
- */
+//==============================================================================
+// Property functions
+//==============================================================================
 
 /**
  * @param  {number} nodeId
@@ -294,15 +289,13 @@ export function deleteNode(id: number): Promise<boolean> {
  * @param  {number|string|boolean|number[]|string[]|boolean[]} data
  * @returns Promise
  */
-export function setProperty(entityId: number, type: string, propertyName: string, data: number | string | boolean | number[] | string[] | boolean[]): Promise<boolean> {
+export function setProperty(entityOrEntityId: INeo4jEntity | number, type: string, propertyName: string, data: number | string | boolean | number[] | string[] | boolean[]): Promise<boolean> {
   let promise = new Promise((resolve, reject) => {
     let propertyEndpointString: string = null;
-    if (type === "node") {
-    propertyEndpointString = `${graphPaths.node}/${entityId}/properties/${propertyName}`;
-    } else if (type === "relationship") {
-      propertyEndpointString = url.resolve(dbConfigUrl.href, `relationship/${entityId}/properties/${propertyName}`);
-    } else {
-      reject(`type must be of value: ${NEO4J_ENTITY_TYPES}`);
+    try {
+      propertyEndpointString = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties/${propertyName}`;
+    } catch (ex) {
+      reject(ex);
     }
 
     if (!data) {
@@ -315,7 +308,7 @@ export function setProperty(entityId: number, type: string, propertyName: string
         reject(err);
       }
       if (response.statusCode !== 204) {
-        reject(`Error setting property: ${propertyName} on Node: ${entityId}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
+        reject(`Error setting property: ${propertyName} on Node: ${_getNeo4jEntityId(entityOrEntityId)}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
       }
       resolve(true);
     });
@@ -328,9 +321,11 @@ export function setProperty(entityId: number, type: string, propertyName: string
  * @param  {any} data
  * @returns Promise
  */
-export function updateProperties(nodeId: number, data: any): Promise<boolean> {
+export function updateProperties(entityOrEntityId: INeo4jEntity | number, type: string, data: any): Promise<boolean> {
   let promise = new Promise((resolve, reject) => {
-    let propertiesEndpointString: string = `${graphPaths.node}/${nodeId}/properties`;
+    let entityId: number = null;
+
+    let propertiesEndpointString: string = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties`;
     if (typeof data !== "string") {
       try {
         data = JSON.stringify(data);
@@ -344,7 +339,7 @@ export function updateProperties(nodeId: number, data: any): Promise<boolean> {
         reject(err);
       }
       if (response.statusCode !== 204) {
-        reject(`Error setting properties on Node: ${nodeId}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
+        reject(`Error setting properties on Node: ${entityId}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
       }
       resolve(true);
     });
@@ -355,15 +350,15 @@ export function updateProperties(nodeId: number, data: any): Promise<boolean> {
 /**
  * @param  {number} nodeId
  */
-export function getProperties(nodeId: number) {
+export function getProperties(entityOrEntityId: INeo4jEntity | number, type: string) {
   let promise = new Promise((resolve, reject) => {
-    let propertiesEndpointString: string = `${graphPaths.node}/${nodeId}/properties`;
+    let propertiesEndpointString: string = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties`;
     request.get(propertiesEndpointString, requestOptions, (err, response, body) => {
       if (err) {
         reject(err);
       }
       if (response.statusCode !== 200) {
-        reject(`Error getting properties on Node: ${nodeId}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
+        reject(`Error getting properties on Node: ${_getNeo4jEntityId(entityOrEntityId)}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
       }
       body = typeof body === "string" && body.length > 0 ? JSON.parse(body) : body;
       resolve(body);
@@ -377,15 +372,20 @@ export function getProperties(nodeId: number) {
  * @param  {string} propertyName
  * @returns Promise
  */
-export function getProperty(nodeId: number, propertyName: string): Promise<number | string | boolean | number[] | string[] | boolean[]> {
+export function getProperty(entityOrEntityId: INeo4jEntity | number, propertyName: string, type: string): Promise<number | string | boolean | number[] | string[] | boolean[]> {
   let promise = new Promise((resolve, reject) => {
-    let propertyEndpointString: string = `${graphPaths.node}/${nodeId}/properties/${propertyName}`;
+    let propertyEndpointString: string = null;
+    try {
+      propertyEndpointString = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties/${propertyName}`;
+    } catch (ex) {
+      reject(ex);
+    }
     request.get(propertyEndpointString, requestOptions, (err, response, body) => {
       if (err) {
         reject(err);
       }
       if (response.statusCode !== 200) {
-        reject(`Error getting property ${propertyName} on Node: ${nodeId}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
+        reject(`Error getting property ${propertyName} on Node: ${_getNeo4jEntityId(entityOrEntityId)}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
       }
       body = typeof body === "string" && body.length > 0 ? JSON.parse(body) : body;
       resolve(body);
@@ -399,15 +399,20 @@ export function getProperty(nodeId: number, propertyName: string): Promise<numbe
  * @param  {string} propertyName
  * @returns Promise
  */
-export function deleteProperty(nodeId: number, propertyName: string): Promise<boolean> {
+export function deleteProperty(entityOrEntityId: INeo4jEntity | number, propertyName: string, type: string): Promise<boolean> {
   let promise = new Promise((resolve, reject) => {
-    let propertyEndpointString: string = `${graphPaths.node}/${nodeId}/properties/${propertyName}`;
+    let propertyEndpointString: string = null;
+    try {
+      propertyEndpointString = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties/${propertyName}`;
+    } catch (ex) {
+      reject(ex);
+    }
     request.del(propertyEndpointString, requestOptions, (err, response, body) => {
       if (err) {
         reject(err);
       }
       if (response.statusCode !== 204) {
-        reject(`Error deleting property ${propertyName} on Node: ${nodeId}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
+        reject(`Error deleting property ${propertyName} on Node: ${_getNeo4jEntityId(entityOrEntityId)}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
       }
       resolve(true);
     });
@@ -419,15 +424,20 @@ export function deleteProperty(nodeId: number, propertyName: string): Promise<bo
  * @param  {number} nodeId
  * @returns Promise
  */
-export function deleteAllProperties(nodeId: number): Promise<boolean> {
+export function deleteAllProperties(entityOrEntityId: INeo4jEntity | number, type: string): Promise<boolean> {
   let promise = new Promise((resolve, reject) => {
-    let propertiesEndpointString = `${graphPaths.node}/${nodeId}/properties`;
+    let propertiesEndpointString: string = null;
+    try {
+      propertiesEndpointString = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties`;
+    } catch (ex) {
+      reject(ex);
+    }
     request.del(propertiesEndpointString, requestOptions, (err, response, body) => {
       if (err) {
         reject(err);
       }
       if (response.statusCode !== 204) {
-        reject(`Error deleting properties on Node: ${nodeId}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
+        reject(`Error deleting properties on Node: ${_getNeo4jEntityId(entityOrEntityId)}. Received HTTP status code: ${response.statusCode}. HTTP body: ${body}`);
       }
       resolve(true);
     });
@@ -435,11 +445,11 @@ export function deleteAllProperties(nodeId: number): Promise<boolean> {
   return promise;
 }
 
-/*********************************
- * Relationship functions
- */
+//==============================================================================
+// Relationship functions
+//==============================================================================
 
-export function getRelationship(relationshipId: number, direction?: string, types?: string[]): Promise<IRelationship> {
+export function getRelationship(relationshipId: number | IRelationship, direction?: string, types?: string[]): Promise<IRelationship> {
   let promise = new Promise((resolve, reject) => {
     if (direction && NEO4J_RELATIONSHIP_DIRECTION.indexOf(direction) === -1) {
       reject(`Relationship 'direction' must be of type: ${NEO4J_RELATIONSHIP_DIRECTION}`);
@@ -495,9 +505,25 @@ export function createRelationship(startNode: INode | string | number, toNode: I
   return promise;
 }
 
-/*********************************
- * Module Accessor/Mutator functions
- */
+export function deleteRelationship(relationshipOrRelationshipId: number | IRelationship): Promise<boolean> {
+  let promise = new Promise((resolve, reject) => {
+    let relationshipEndpointString: string = _getNeo4jEntityUrl(relationshipOrRelationshipId, "relationship");
+    request.del(relationshipEndpointString, requestOptions, (err, response, body) => {
+      if (err) {
+        reject(err);
+      }
+      if (response.statusCode !== 204) {
+        reject(`Error deleting relationship. received invalid HTTP status code: ${response.statusCode}, and message: ${response.statusMessage}`);
+      }
+      resolve(true);
+    });
+  });
+  return promise;
+}
+
+//==============================================================================
+// Module Accessor/Mutator functions
+//==============================================================================
 
 /**
  * @returns boolean
@@ -521,7 +547,15 @@ export function setStreaming(reqStreaming: boolean): boolean {
   return streaming = reqStreaming;
 }
 
-function _getNeo4jEntityUrl(entity: INeo4jEntity | string | number, type?: string): string {
+export function getRequestOptions(): request.CoreOptions {
+  return requestOptions;
+}
+
+//==============================================================================
+// Private module functions
+//==============================================================================
+
+function _getNeo4jEntityUrl(entity: INeo4jEntity | string | number, type: string): string {
   if (typeof entity === "object") {
     if (entity.self) {
       return entity.self;
@@ -545,5 +579,15 @@ function _getNeo4jEntityUrl(entity: INeo4jEntity | string | number, type?: strin
     }
   } else {
     throw new TypeError(`startNode must be of type: INode, string, number`);
+  }
+}
+
+function _getNeo4jEntityId(entityOrEntityId: INeo4jEntity | number): number {
+  if (typeof entityOrEntityId === "object" && entityOrEntityId.hasOwnProperty("metadata")) {
+    return entityOrEntityId.metadata.id;
+  } else if (typeof entityOrEntityId === "number") {
+    return entityOrEntityId;
+  } else {
+    throw new TypeError(`Invalid entityOrEntityId type. Must be of type: INeo4jEntity or number`);
   }
 }
