@@ -636,4 +636,3 @@ function _getNeo4jEntityId(entityOrEntityId) {
         throw new TypeError(`Invalid entityOrEntityId type. Must be of type: INeo4jEntity or number`);
     }
 }
-//# sourceMappingURL=index.js.map

@@ -468,4 +468,3 @@ describe("Neo4j Typescript REST", function () {
         it("should get all typed relationshipd on a node", function (done) { done(); });
     });
 });
-//# sourceMappingURL=index.spec.js.map
