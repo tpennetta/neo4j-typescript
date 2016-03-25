@@ -11,7 +11,8 @@
   "scripts": {
     "prepublish": "tsc -p .",
     "build": "tsc -p .",
-    "test": "tsc -p . && ./node_modules/.bin/istanbul cover -x \"**.spec.**\" ./node_modules/mocha/bin/_mocha --report lcovonly -- build/index.spec.js && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+    "test": "tsc -p . && ./node_modules/.bin/istanbul cover -x \"**.spec.**\" ./node_modules/mocha/bin/_mocha --report lcovonly -- build/index.spec.js && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
+    "postinstall": "typings install"
   },
   "keywords": [
     "typescript",
