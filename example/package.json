@@ -9,6 +9,6 @@
   "author": "Tom Pennetta <tpennetta@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "neo4j-typescript": "^0.1.5"
+    "neo4j-typescript": "^0.1.6"
   }
 }
