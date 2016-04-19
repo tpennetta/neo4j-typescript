@@ -165,6 +165,24 @@ describe("Neo4j Typescript REST", function () {
                 done(reason);
             });
         });
+        it("should return cypher responses specified by 'ResultDataContents'", function (done) {
+            let query = `MATCH (n) RETURN n LIMIT 3`;
+            let cypherRequest = {
+                statements: [{
+                        statement: query,
+                        resultDataContents: ["REST"]
+                    }]
+            };
+            neo4j.cypher(cypherRequest)
+                .then((response) => {
+                console.log(JSON.stringify(response, null, "\t"));
+                response.results[0].data[0].should.have.property("rest");
+                done();
+            })
+                .catch((reason) => {
+                done(reason);
+            });
+        });
         it("should fail to execute an invalid cypher statement", function (done) {
             let invalidCypher = {
                 statements: [{

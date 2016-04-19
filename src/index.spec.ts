@@ -24,7 +24,6 @@ describe("Neo4j Typescript REST", function() {
   describe("#connect", function() {
     let connection = null;
     it("should fail to parse url endpoint", function(done) {
-
       badNeo4jConfig.host = null;
       neo4j.connect(badNeo4jConfig)
         .then((response) => {
@@ -170,6 +169,24 @@ describe("Neo4j Typescript REST", function() {
         .catch((reason) => {
           done(reason);
         });
+    });
+    it("should return cypher responses specified by 'ResultDataContents'", function(done) {
+      let query: string = `MATCH (n) RETURN n LIMIT 3`;
+      let cypherRequest: neo4j.INeo4jCypherRequest = {
+        statements: [{
+          statement: query,
+          resultDataContents: ["REST"]
+        }]
+      };
+      neo4j.cypher(cypherRequest)
+        .then((response) => {
+          response.results[0].data[0].should.have.property("rest");
+          done();
+        })
+        .catch((reason) => {
+          done(reason);
+        });
+
     });
     it("should fail to execute an invalid cypher statement", function(done) {
       let invalidCypher: neo4j.INeo4jCypherRequest = {

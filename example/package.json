@@ -1,0 +1,14 @@
+{
+  "name": "neo4j-typescript-example",
+  "version": "1.0.0",
+  "description": "Example usage of the neo4j-typescript package",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tom Pennetta <tpennetta@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "neo4j-typescript": "^0.1.5"
+  }
+}

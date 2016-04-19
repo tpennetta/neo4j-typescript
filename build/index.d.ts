@@ -29,12 +29,12 @@ export interface INeo4jAuthConfig {
     username: string;
     password: string;
 }
+export declare type ResultDataContents = "REST" | "row" | "graph" | "wrong";
 export interface INeo4jCypherRequest {
     statements: [{
         statement: string;
-        parameters?: {
-            props: any;
-        };
+        parameters?: any;
+        resultDataContents?: ResultDataContents[];
     }];
 }
 export interface INeo4jCypherResponse {
