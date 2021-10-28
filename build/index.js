@@ -1,8 +1,10 @@
+"use strict";
 /**
  * @author Tom Pennetta <tpennetta@gmail.com>
  * TODO: Don't reuse the same instance fo requestOptions for each call.
  */
-"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRequestOptions = exports.setStreaming = exports.isStreaming = exports.isConnected = exports.deleteRelationship = exports.createRelationship = exports.getRelationship = exports.deleteAllProperties = exports.deleteProperty = exports.getProperty = exports.getProperties = exports.updateProperties = exports.setProperty = exports.getNodeDegree = exports.deleteNode = exports.createNode = exports.getNode = exports.cypher = exports.dropIndex = exports.listIndexesForLabel = exports.createIndex = exports.getAllPropertyKeys = exports.getRelationshipTypes = exports.connect = exports.NEO4J_PROTOCOL = void 0;
 const url = require("url");
 const request = require("request");
 //==============================================================================
@@ -16,11 +18,11 @@ request.defaults({
 //==============================================================================
 // Global constants.
 //==============================================================================
+var NEO4J_PROTOCOL;
 (function (NEO4J_PROTOCOL) {
     NEO4J_PROTOCOL[NEO4J_PROTOCOL["http"] = 0] = "http";
     NEO4J_PROTOCOL[NEO4J_PROTOCOL["https"] = 1] = "https";
-})(exports.NEO4J_PROTOCOL || (exports.NEO4J_PROTOCOL = {}));
-var NEO4J_PROTOCOL = exports.NEO4J_PROTOCOL;
+})(NEO4J_PROTOCOL = exports.NEO4J_PROTOCOL || (exports.NEO4J_PROTOCOL = {}));
 ;
 // TODO: Change to enums
 const NEO4J_ENTITY_TYPES = ["node", "relationship"];
@@ -520,8 +522,8 @@ function createRelationship(startNode, toNode, type, data) {
         }
         let body = {
             to: relationshipEndEndpointString,
-            type: type,
-            data: data
+            type,
+            data
         };
         try {
             body = JSON.stringify(body);

@@ -1,7 +1,11 @@
+/**
+ * @author Tom Pennetta <tpennetta@gmail.com>
+ * TODO: Don't reuse the same instance fo requestOptions for each call.
+ */
 import * as request from "request";
 export declare enum NEO4J_PROTOCOL {
     http = 0,
-    https = 1,
+    https = 1
 }
 export interface INeo4jInternalPaths {
     extensions: any;
@@ -131,7 +135,7 @@ export declare function updateProperties(entityOrEntityId: INeo4jEntity | number
 /**
  * @param  {number} nodeId
  */
-export declare function getProperties(entityOrEntityId: INeo4jEntity | number, type: string): Promise<{}>;
+export declare function getProperties(entityOrEntityId: INeo4jEntity | number, type: string): Promise<unknown>;
 /**
  * @param  {number} nodeId
  * @param  {string} propertyName

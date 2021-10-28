@@ -1,9 +1,9 @@
 {
   "name": "neo4j-typescript",
-  "version": "0.1.6",
+  "version": "2.0.0",
   "description": "Typescript Library for Communicating with Neo4j over REST using Request",
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=12.22.0"
   },
   "engineStrict": true,
   "repository": {
@@ -13,10 +13,10 @@
   "main": "build/index.js",
   "typings": "build/index.d.ts",
   "scripts": {
-    "prepublish": "typings install && npm run build",
+    "prepublish": "npx typings install && npm run build",
     "build": "rm -rf build/* && tsc -p .",
     "test": "tsc -p . && ./node_modules/.bin/istanbul cover -x \"**.spec.**\" ./node_modules/mocha/bin/_mocha --report lcovonly -- build/index.spec.js && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
-    "postinstall": "typings install"
+    "postinstall": "npx typings install"
   },
   "keywords": [
     "typescript",
@@ -30,6 +30,9 @@
     "request": "^2.69.0"
   },
   "devDependencies": {
+    "@types/chai": "^4.2.22",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.11.6",
     "chai": "^3.5.0",
     "coveralls": "^2.11.8",
     "form-data": "^1.0.0-rc4",
@@ -37,7 +40,7 @@
     "mocha": "^2.4.5",
     "mocha-lcov-reporter": "^1.2.0",
     "tslint": "^3.6.0",
-    "typescript": "^1.8.9"
+    "typescript": "^3.9.10"
   },
   "bugs": {
     "url": "https://github.com/tpennetta/neo4j-typescript/issues"
