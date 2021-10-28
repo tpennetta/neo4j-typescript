@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 require("mocha");
 const chai = require("chai");
 const neo4j = require("./index");
@@ -10,7 +11,7 @@ describe("Neo4j Typescript REST", function () {
         port: 7474,
         authentication: {
             username: "neo4j",
-            password: "neo4j"
+            password: "BMFOTybl51qxqcqHBgK9"
         },
         streaming: true
     };
@@ -148,15 +149,13 @@ describe("Neo4j Typescript REST", function () {
         });
         it("should execute several valid cypher statements", function (done) {
             let validCypher = {
-                statements: [
-                    {
+                statements: [{
                         statement: "MATCH (n) RETURN count(n)"
-                    },
-                    {
-                        statement: "MATCH (x) RETURN x"
-                    }
-                ]
+                    }]
             };
+            validCypher.statements.push({
+                statement: "MATCH (x) RETURN x"
+            });
             neo4j.cypher(validCypher)
                 .then((response) => {
                 done();
@@ -175,7 +174,6 @@ describe("Neo4j Typescript REST", function () {
             };
             neo4j.cypher(cypherRequest)
                 .then((response) => {
-                console.log(JSON.stringify(response, null, "\t"));
                 response.results[0].data[0].should.have.property("rest");
                 done();
             })
@@ -474,7 +472,6 @@ describe("Neo4j Typescript REST", function () {
             neo4j.deleteRelationship(sampleNewRelationship)
                 .then((response) => {
                 done();
-                ;
             })
                 .catch((reason) => {
                 done(reason);

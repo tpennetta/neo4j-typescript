@@ -1,6 +1,5 @@
 import "mocha";
 import * as chai from  "chai";
-import * as util from "util";
 
 import * as neo4j from "./index";
 import * as request from "request";
@@ -30,7 +29,7 @@ describe("Neo4j Typescript REST", function() {
           done(response);
         })
         .catch((reason) => {
-          done()
+          done();
         });
     });
     it("should establish a new connection", function(done) {
@@ -153,15 +152,13 @@ describe("Neo4j Typescript REST", function() {
     });
     it("should execute several valid cypher statements", function(done) {
       let validCypher: neo4j.INeo4jCypherRequest = {
-        statements: [
-          {
+        statements: [{
             statement: "MATCH (n) RETURN count(n)"
-          },
-          {
-            statement: "MATCH (x) RETURN x"
-          }
-        ]
+          }]
       };
+      validCypher.statements.push({
+        statement: "MATCH (x) RETURN x"
+      });
       neo4j.cypher(validCypher)
         .then((response) => {
           done();
@@ -482,7 +479,7 @@ describe("Neo4j Typescript REST", function() {
     it("should delete newly created relationship", function(done) {
       neo4j.deleteRelationship(sampleNewRelationship)
         .then((response) => {
-          done();;
+          done();
         })
         .catch((reason) => {
           done(reason);

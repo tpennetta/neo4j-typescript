@@ -3,10 +3,8 @@
  * TODO: Don't reuse the same instance fo requestOptions for each call.
  */
 
-import * as path from "path";
 import * as url from "url";
 import * as request from "request";
-import * as util from "util";
 import * as http from "http";
 
 //==============================================================================
@@ -83,16 +81,16 @@ export interface INeo4jCypherResponse {
     data: [{
       row: any[]
     }]
-  }]
+  }];
   errors: [{
     code?: string,
     message?: string
-  }]
+  }];
 }
 
 export interface INeo4jIndexResponse {
-  property_keys: string[],
-  label: string
+  property_keys: string[];
+  label: string;
 }
 
 export interface INeo4jEntity {
@@ -148,7 +146,7 @@ let dbConfigUrl: url.Url = null;
  * @returns Promise
  */
 export function connect(options: INeo4jConfig): Promise<INeo4jInternalPaths | string> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<INeo4jInternalPaths | string>((resolve, reject) => {
     if (connected && graphPaths && url.parse(graphPaths.node).hostname === options.host) {
       return resolve(graphPaths);
     }
@@ -305,7 +303,7 @@ export function dropIndex(label: string, propertyName: string): Promise<boolean>
 //==============================================================================
 
 export function cypher(cypherStatements: INeo4jCypherRequest): Promise<INeo4jCypherResponse> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<INeo4jCypherResponse>((resolve, reject) => {
     let cypherEndpointString: string = `${graphPaths.transaction}/commit`;
     try {
       requestOptions.body = JSON.stringify(cypherStatements);
@@ -338,7 +336,7 @@ export function cypher(cypherStatements: INeo4jCypherRequest): Promise<INeo4jCyp
  * @returns Promise
  */
 export function getNode(id: number): Promise<INode> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<INode>((resolve, reject) => {
     let nodeEndpointString: string = `${graphPaths.node}/${id}`;
     request.get(nodeEndpointString, requestOptions, (err, response, body) => {
       if (err) {
@@ -359,7 +357,7 @@ export function getNode(id: number): Promise<INode> {
  * @returns Promise
  */
 export function createNode(data?: any): Promise<INode> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<INode>((resolve, reject) => {
     let nodeEndpointString: string = graphPaths.node;
     data = data || {};
     requestOptions.body = typeof data !== "string" ? JSON.stringify(data) : data;
@@ -383,7 +381,7 @@ export function createNode(data?: any): Promise<INode> {
  * @returns Promise
  */
 export function deleteNode(id: number): Promise<boolean> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<boolean>((resolve, reject) => {
     let nodeEndpointString: string = `${graphPaths.node}/${id}`;
     request.del(nodeEndpointString, requestOptions, (err, response, body) => {
       if (err) {
@@ -402,7 +400,7 @@ export function deleteNode(id: number): Promise<boolean> {
 }
 
 export function getNodeDegree(nodeOrNodeId: INode | number, direction?: string, type?: string): Promise<number> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<number>((resolve, reject) => {
     let degreeEndpointString = `${_getNeo4jEntityUrl(nodeOrNodeId, "node")}/degree`;
     direction = direction || "all";
     if (direction && NEO4J_RELATIONSHIP_DIRECTION.indexOf(direction) !== -1) {
@@ -411,7 +409,7 @@ export function getNodeDegree(nodeOrNodeId: INode | number, direction?: string, 
       reject(`'direction' must be of value: ${NEO4J_RELATIONSHIP_DIRECTION}`);
     }
     if (type && typeof type === "string") {
-      degreeEndpointString = url.resolve(`${degreeEndpointString}/`, type)
+      degreeEndpointString = url.resolve(`${degreeEndpointString}/`, type);
     }
     request.get(degreeEndpointString, requestOptions, (err, response, body) => {
       if (err) {
@@ -438,7 +436,7 @@ export function getNodeDegree(nodeOrNodeId: INode | number, direction?: string, 
  * @returns Promise
  */
 export function setProperty(entityOrEntityId: INeo4jEntity | number, type: string, propertyName: string, data: number | string | boolean | number[] | string[] | boolean[]): Promise<boolean> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<boolean>((resolve, reject) => {
     let propertyEndpointString: string = null;
     try {
       propertyEndpointString = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties/${propertyName}`;
@@ -470,7 +468,7 @@ export function setProperty(entityOrEntityId: INeo4jEntity | number, type: strin
  * @returns Promise
  */
 export function updateProperties(entityOrEntityId: INeo4jEntity | number, type: string, data: any): Promise<boolean> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<boolean>((resolve, reject) => {
     let entityId: number = null;
 
     let propertiesEndpointString: string = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties`;
@@ -521,7 +519,7 @@ export function getProperties(entityOrEntityId: INeo4jEntity | number, type: str
  * @returns Promise
  */
 export function getProperty(entityOrEntityId: INeo4jEntity | number, propertyName: string, type: string): Promise<number | string | boolean | number[] | string[] | boolean[]> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<number | string | boolean | number[] | string[] | boolean[]>((resolve, reject) => {
     let propertyEndpointString: string = null;
     try {
       propertyEndpointString = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties/${propertyName}`;
@@ -548,7 +546,7 @@ export function getProperty(entityOrEntityId: INeo4jEntity | number, propertyNam
  * @returns Promise
  */
 export function deleteProperty(entityOrEntityId: INeo4jEntity | number, propertyName: string, type: string): Promise<boolean> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<boolean>((resolve, reject) => {
     let propertyEndpointString: string = null;
     try {
       propertyEndpointString = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties/${propertyName}`;
@@ -573,7 +571,7 @@ export function deleteProperty(entityOrEntityId: INeo4jEntity | number, property
  * @returns Promise
  */
 export function deleteAllProperties(entityOrEntityId: INeo4jEntity | number, type: string): Promise<boolean> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<boolean>((resolve, reject) => {
     let propertiesEndpointString: string = null;
     try {
       propertiesEndpointString = `${_getNeo4jEntityUrl(entityOrEntityId, type)}/properties`;
@@ -598,7 +596,7 @@ export function deleteAllProperties(entityOrEntityId: INeo4jEntity | number, typ
 //==============================================================================
 
 export function getRelationship(relationshipId: number | IRelationship, direction?: string, types?: string[]): Promise<IRelationship> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<IRelationship>((resolve, reject) => {
     if (direction && NEO4J_RELATIONSHIP_DIRECTION.indexOf(direction) === -1) {
       reject(`Relationship 'direction' must be of type: ${NEO4J_RELATIONSHIP_DIRECTION}`);
     }
@@ -618,7 +616,7 @@ export function getRelationship(relationshipId: number | IRelationship, directio
 }
 
 export function createRelationship(startNode: INode | string | number, toNode: INode | string | number, type?: string, data?: any): Promise<IRelationship> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<IRelationship>((resolve, reject) => {
     let relationshipStartEndpointString: string = null;
     let relationshipEndEndpointString: string = null;
     try {
@@ -654,7 +652,7 @@ export function createRelationship(startNode: INode | string | number, toNode: I
 }
 
 export function deleteRelationship(relationshipOrRelationshipId: number | IRelationship): Promise<boolean> {
-  let promise = new Promise((resolve, reject) => {
+  let promise = new Promise<boolean>((resolve, reject) => {
     let relationshipEndpointString: string = _getNeo4jEntityUrl(relationshipOrRelationshipId, "relationship");
     request.del(relationshipEndpointString, requestOptions, (err, response, body) => {
       if (err) {
